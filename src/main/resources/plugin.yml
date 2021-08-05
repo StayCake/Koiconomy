@@ -1,0 +1,10 @@
+name: Koiconomy
+main: com.koisv.economy.Main
+version: 1.0
+api-version: 1.17
+load: STARTUP
+depend:
+  - Kotlin
+  - Vault
+libraries:
+  - io.github.monun:kommand:2.4.1
