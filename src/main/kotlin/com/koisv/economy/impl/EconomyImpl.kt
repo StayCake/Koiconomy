@@ -1,15 +1,46 @@
 package com.koisv.economy.impl
 
 import com.koisv.economy.Main
+import hazae41.minecraft.kutils.bukkit.keys
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import net.milkbowl.vault.economy.Economy
 import net.milkbowl.vault.economy.EconomyResponse
 import net.milkbowl.vault.economy.EconomyResponse.ResponseType.*
+import java.util.*
+import kotlin.collections.HashMap
 
 class EconomyImpl : Economy {
-
-    private val econFile = EconomyFile
+    class EconFile {
+        companion object {
+            fun load() {
+                if (!Main.balanceLoc.canRead()) {
+                    Main.balanceData.save(Main.balanceLoc)
+                }
+                Main.balanceData.load(Main.balanceLoc)
+                val dataKey = Main.balanceData.keys
+                val map : HashMap<UUID,Double> = HashMap()
+                dataKey.forEach {
+                    val key = UUID.fromString(it)
+                    val value = Main.balanceData.getInt(it).toDouble()
+                    map[key] = value
+                }
+                Main.userBalance = map
+            }
+            fun save() : Boolean {
+                Main.userBalance.forEach { (ID, Value) ->
+                    Main.balanceData.set(ID.toString(), Value.toInt())
+                }
+                return try {
+                    Main.balanceData.save(Main.balanceLoc)
+                    true
+                } catch (e: Error) {
+                    println(e.stackTrace)
+                    false
+                }
+            }
+        }
+    }
     private val notFoundResponse = EconomyResponse(-404.0,-404.0,FAILURE,"계정이 존재하지 않습니다!")
     private val notImplementedResponse = EconomyResponse(-403.0,-403.0,NOT_IMPLEMENTED,"해당 기능은 존재하지 않습니다!")
 
@@ -84,11 +115,11 @@ class EconomyImpl : Economy {
     override fun withdrawPlayer(playerName: String?, amount: Double): EconomyResponse {
         val pid = Bukkit.getPlayer(playerName ?: "")?.uniqueId
         val bal = Main.userBalance[pid]
-        econFile.save()
         return if (pid == null) notFoundResponse
         else {
             if (bal != null) {
                 Main.userBalance[pid] = bal - amount
+                EconFile.save()
                 successResponse(amount,bal)
             } else notFoundResponse
         }
@@ -96,11 +127,12 @@ class EconomyImpl : Economy {
     override fun withdrawPlayer(player: OfflinePlayer?, amount: Double): EconomyResponse {
         val pid = player?.uniqueId
         val bal = Main.userBalance[pid]
-        econFile.save()
+        EconFile.save()
         return if (pid == null) notFoundResponse
         else {
             if (bal != null) {
                 Main.userBalance[pid] = bal - amount
+                EconFile.save()
                 successResponse(amount,bal)
             } else notFoundResponse
         }
@@ -116,11 +148,11 @@ class EconomyImpl : Economy {
     override fun depositPlayer(playerName: String?, amount: Double): EconomyResponse {
         val pid = Bukkit.getPlayer(playerName ?: "")?.uniqueId
         val bal = Main.userBalance[pid]
-        econFile.save()
         return if (pid == null) notFoundResponse
         else {
             if (bal != null) {
                 Main.userBalance[pid] = bal + amount
+                EconFile.save()
                 successResponse(amount,bal)
             } else notFoundResponse
         }
@@ -128,11 +160,11 @@ class EconomyImpl : Economy {
     override fun depositPlayer(player: OfflinePlayer?, amount: Double): EconomyResponse {
         val pid = player?.uniqueId
         val bal = Main.userBalance[pid]
-        econFile.save()
         return if (pid == null) notFoundResponse
         else {
             if (bal != null) {
                 Main.userBalance[pid] = bal + amount
+                EconFile.save()
                 successResponse(amount,bal)
             } else notFoundResponse
         }
@@ -187,7 +219,7 @@ class EconomyImpl : Economy {
         val start = Main.instance.config.getDouble("startBal")
         return if (pid != null) {
             Main.userBalance[pid] = start
-            econFile.save()
+            EconFile.save()
         } else false
     }
     override fun createPlayerAccount(player: OfflinePlayer?): Boolean {
@@ -195,7 +227,7 @@ class EconomyImpl : Economy {
         val start = Main.instance.config.getDouble("startBal")
         return if (pid != null) {
             Main.userBalance[pid] = start
-            econFile.save()
+            EconFile.save()
         } else false
     }
     override fun createPlayerAccount(playerName: String?, worldName: String?): Boolean {

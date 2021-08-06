@@ -1,7 +1,8 @@
 package com.koisv.economy
 
 import com.koisv.economy.commands.Ki
-import com.koisv.economy.impl.EconomyFile
+import com.koisv.economy.commands.Money
+import com.koisv.economy.impl.EconomyImpl
 import com.koisv.economy.vault.VaultHook
 import hazae41.minecraft.kutils.get
 import io.github.monun.kommand.kommand
@@ -30,18 +31,21 @@ class Main : JavaPlugin() {
         instance = this
         balanceLoc = dataFolder["balance.yml"]
         balanceData = YamlConfiguration.loadConfiguration(balanceLoc)
-        EconomyFile.load()
+        EconomyImpl.EconFile.load()
         VaultHook().hook()
         server.pluginManager.registerEvents(Events(), this)
         kommand {
             register("ki") {
                 Ki.register(this)
             }
+            register("money","돈") {
+                Money.register(this)
+            }
         }
     }
 
     override fun onDisable() {
-        EconomyFile.save()
+        EconomyImpl.EconFile.save()
         VaultHook().unhook()
         saveConfig()
         println(String.format("[%s] - 가동 중지.", description.name))
